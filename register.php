@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/telegram.php';
 
 if (is_logged_in()) {
     redirect(role_dashboard_path(current_user()['role']));
@@ -59,6 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_array($result) && isset($result['error'])) {
             $errors[] = $result['error'];
         } else {
+            $uniLine = $old['university'] !== '' ? "\nالجامعة: " . telegram_escape($old['university']) : '';
+            telegram_notify_admin(
+                "🆕 <b>تسجيل حساب جديد بباحث</b>\n\n" .
+                'الاسم: ' . telegram_escape($old['name']) . "\n" .
+                'البريد: ' . telegram_escape($old['email']) . "\n" .
+                'النوع: ' . telegram_escape(role_label($old['role'])) . $uniLine
+            );
             attempt_login($pdo, $old['email'], $password);
             flash_set('مرحبًا بك في باحث! أكمل بياناتك من صفحة "حسابي" في أي وقت.');
             redirect('student/dashboard.php');
