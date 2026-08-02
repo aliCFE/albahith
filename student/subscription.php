@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/telegram.php';
 require_role(['student', 'instructor']);
 
 $pdo = get_db();
@@ -9,7 +10,6 @@ $stmt = $pdo->prepare('SELECT plan, university FROM users WHERE id = ?');
 $stmt->execute([$user['id']]);
 $row = $stmt->fetch();
 $plan = $row['plan'];
-$universityLimit = university_plan_limit($pdo, $row['university'] ?? '');
 
 $errors = [];
 const MAX_PROOF_BYTES = 8 * 1024 * 1024; // 8 ميجابايت
@@ -36,6 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $stmt = $pdo->prepare('INSERT INTO payment_requests (user_id, proof_filename, status) VALUES (?, ?, \'pending\')');
                 $stmt->execute([$user['id'], $storedName]);
+                telegram_notify_admin(
+                    "💳 <b>طلب ترقية جديد بباحث</b>\n\n" .
+                    'الاسم: ' . telegram_escape($user['name']) . "\n" .
+                    'البريد: ' . telegram_escape($user['email']) . "\n" .
+                    'الخطة الحالية: ' . telegram_escape(plan_label($plan))
+                );
                 flash_set('تم إرسال طلب الترقية. راح يتم مراجعته من الإدارة قريبًا.');
                 redirect('student/subscription.php');
             }
@@ -49,6 +55,7 @@ $requests = $stmt->fetchAll();
 
 $zaincashNumber = get_setting($pdo, 'zaincash_number', '');
 $superkeyNumber = get_setting($pdo, 'superkey_number', '');
+$proPriceDisplay = get_setting($pdo, 'pro_price_display', '');
 $paymentInfo = get_setting($pdo, 'payment_account_info', '');
 $hasPaymentMethod = $zaincashNumber !== '' || $superkeyNumber !== '';
 $proLimit = pro_monthly_limit($pdo);
@@ -66,9 +73,6 @@ include __DIR__ . '/../includes/header.php';
 <div class="panel">
     <h2>خطتك الحالية: <?= h(plan_label($plan)) ?></h2>
     <p class="hint">الخطة المجانية: <?= $freeLimit ?> طلب شهريًا. الخطة المدفوعة: <?= $proLimit ?> طلب شهريًا.</p>
-    <?php if ($universityLimit !== null && $universityLimit > 0): ?>
-        <p class="badge badge-info">جامعتك مشتركة بحد شهري إضافي: <?= (int)$universityLimit ?> طلب</p>
-    <?php endif; ?>
 </div>
 
 <?php if ($plan !== 'pro'): ?>
@@ -77,6 +81,12 @@ include __DIR__ . '/../includes/header.php';
     <?php if (!$hasPaymentMethod): ?>
         <p class="hint">لم تُضف إدارة المنصة بيانات حساب الدفع بعد. تواصل معهم مباشرة.</p>
     <?php else: ?>
+        <?php if ($proPriceDisplay !== ''): ?>
+            <div class="plan-price-card">
+                <span class="plan-price-card-label">باحث Plus</span>
+                <span class="plan-price-card-value"><?= h($proPriceDisplay) ?></span>
+            </div>
+        <?php endif; ?>
         <p class="hint">حوّل قيمة الاشتراك إلى أحد الحسابات التالية، ثم ارفع صورة إثبات التحويل بالأسفل ليتم تفعيل الخطة بعد المراجعة:</p>
         <div class="payment-methods">
             <?php if ($zaincashNumber !== ''): ?>

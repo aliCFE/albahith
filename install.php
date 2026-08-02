@@ -365,6 +365,8 @@ if (!$already_installed && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     "define('OPENAI_API_KEY', " . var_export($openai_api_key, true) . ");\n" .
                     "define('ANTHROPIC_API_KEY', '');\n" .
                     "define('PEXELS_API_KEY', '');\n" .
+                    "define('TELEGRAM_BOT_TOKEN', '');\n" .
+                    "define('TELEGRAM_ADMIN_CHAT_ID', '');\n" .
                     "define('AI_MODEL', " . var_export($ai_model, true) . ");\n" .
                     "define('APP_INSTALLED', true);\n";
 

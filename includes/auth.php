@@ -7,6 +7,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+/**
+ * الصفحات المحمية (بعد تسجيل الدخول) تعرض بيانات تخص المستخدم نفسه،
+ * فلازم نمنع أي جهة (متصفح، أو أي طبقة CDN/بروكسي أمام الاستضافة) من تخزين
+ * نسخة منها وعرضها لزائر آخر — لهذا نجبر عدم التخزين المؤقت صراحة بكل صفحة محمية
+ */
+header('Cache-Control: no-store, no-cache, must-revalidate, private, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
 
