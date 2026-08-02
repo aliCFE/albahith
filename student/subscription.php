@@ -9,7 +9,6 @@ $stmt = $pdo->prepare('SELECT plan, university FROM users WHERE id = ?');
 $stmt->execute([$user['id']]);
 $row = $stmt->fetch();
 $plan = $row['plan'];
-$universityLimit = university_plan_limit($pdo, $row['university'] ?? '');
 
 $errors = [];
 const MAX_PROOF_BYTES = 8 * 1024 * 1024; // 8 ميجابايت
@@ -66,9 +65,6 @@ include __DIR__ . '/../includes/header.php';
 <div class="panel">
     <h2>خطتك الحالية: <?= h(plan_label($plan)) ?></h2>
     <p class="hint">الخطة المجانية: <?= $freeLimit ?> طلب شهريًا. الخطة المدفوعة: <?= $proLimit ?> طلب شهريًا.</p>
-    <?php if ($universityLimit !== null && $universityLimit > 0): ?>
-        <p class="badge badge-info">جامعتك مشتركة بحد شهري إضافي: <?= (int)$universityLimit ?> طلب</p>
-    <?php endif; ?>
 </div>
 
 <?php if ($plan !== 'pro'): ?>

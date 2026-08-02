@@ -171,28 +171,13 @@ function resolve_choice_selection($currentValue, array $options) {
 }
 
 /**
- * الحد الشهري الخاص بجامعة معيّنة إن وُجد (تطابق بعد إزالة المسافات الزائدة)، أو null
- */
-function university_plan_limit(PDO $pdo, $universityName) {
-    $universityName = trim((string)$universityName);
-    if ($universityName === '') return null;
-    $stmt = $pdo->prepare('SELECT monthly_limit FROM university_plans WHERE university_name = ?');
-    $stmt->execute([$universityName]);
-    $limit = $stmt->fetchColumn();
-    return $limit !== false ? (int)$limit : null;
-}
-
-/**
- * الحد الشهري الفعلي لمستخدم معيّن: أعلى قيمة بين حد خطته الشخصية (مجانية/مدفوعة)
- * وحد جامعته إن كانت مندرجة ضمن اشتراك جامعي
+ * الحد الشهري الفعلي لمستخدم معيّن، بحسب خطته الشخصية (مجانية/مدفوعة) فقط
  */
 function current_plan_limit(PDO $pdo, $userId) {
-    $stmt = $pdo->prepare('SELECT plan, university FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT plan FROM users WHERE id = ?');
     $stmt->execute([$userId]);
     $row = $stmt->fetch();
-    $personalLimit = ($row['plan'] ?? 'free') === 'pro' ? pro_monthly_limit($pdo) : monthly_free_limit($pdo);
-    $universityLimit = university_plan_limit($pdo, $row['university'] ?? '');
-    return $universityLimit !== null ? max($personalLimit, $universityLimit) : $personalLimit;
+    return ($row['plan'] ?? 'free') === 'pro' ? pro_monthly_limit($pdo) : monthly_free_limit($pdo);
 }
 
 /**
